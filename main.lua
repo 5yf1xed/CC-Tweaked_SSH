@@ -1,43 +1,51 @@
--- CC:Tweaked Lua script to parse and download files
-local http = require("http")
+local function downloadAndInstallList(url)
+  -- Download the list file using wget
+  print("Fetching file list from: " .. url)
+  local listFile = "temp.txt"
+  local success = shell.run("wget", url, listFile)
 
-local function downloadAndInstall(url)
-  -- Parse the URL for the actual file link and the destination path
-  local sourceUrl, destinationPath = url:match("(.-):(.+)")
-
-  if not sourceUrl or not destinationPath then
-    print("Invalid URL format.")
+  if not success then
+    print("Failed to download the file list.")
     return
   end
 
-  -- Fetch the file from the URL
-  print("Downloading from: " .. sourceUrl)
-  local response = http.get(sourceUrl)
-
-  if not response then
-    print("Failed to download file.")
+  -- Read the file containing URL:FilePath pairs
+  local file = fs.open(listFile, "r")
+  if not file then
+    print("Failed to open the file list.")
     return
   end
 
-  -- Extract filename from the URL
-  local filename = sourceUrl:match(".*/(.*)")
-  if not filename then
-    print("Failed to extract filename.")
-    return
+  print("Processing file list...")
+  while true do
+    local line = file.readLine()
+    if not line then break end
+
+    -- Parse URL and file path
+    local sourceUrl, destinationPath = line:match("(.-):(.+)")
+    if not sourceUrl or not destinationPath then
+      print("Invalid line format: " .. (line or "nil"))
+    else
+      print("Downloading from: " .. sourceUrl)
+
+      -- Ensure the directory exists
+      fs.makeDir(fs.getDir(destinationPath))
+
+      -- Download the file using wget
+      local result = shell.run("wget", sourceUrl, destinationPath)
+
+      if result then
+        print("Successfully installed to: " .. destinationPath)
+      else
+        print("Failed to download: " .. sourceUrl)
+      end
+    end
   end
 
-  -- Create the target directory if it doesn't exist
-  fs.makeDir(destinationPath)
-
-  local filePath = fs.combine(destinationPath, filename)
-  local file = fs.open(filePath, "w")
-  file.write(response.readAll())
   file.close()
-  response.close()
-
-  print("File installed at: " .. filePath)
+  fs.delete(listFile) -- Clean up
 end
 
--- Example URL
-local exampleUrl = "https://raw.githubusercontent.com/5yf1xed/CC-Tweaked_SSH/refs/heads/main/default/users:/server/config"
-downloadAndInstall(exampleUrl)
+-- Example usage
+local fileListUrl = "https://github.com/5yf1xed/CC-Tweaked_SSH/raw/refs/heads/main/default-files"
+downloadAndInstallList(fileListUrl)
