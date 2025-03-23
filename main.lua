@@ -1,4 +1,4 @@
-local function downloadFile(URL,dest)
+local function downloadFile(url,dest)
   local response = http.get(url)
   local success = shell.run("wget", url, dest)
 end
