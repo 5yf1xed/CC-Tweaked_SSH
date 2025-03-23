@@ -1,5 +1,4 @@
-
---dir thingies...
+-- Create directories
 local default_dirs = {
     "/server",
     "/server/bin",
@@ -9,10 +8,12 @@ local default_dirs = {
     "/server/tmp",
 }
 for _, dir in ipairs(default_dirs) do
-    fs.makeDir(dir)
+    if not fs.exists(dir) then
+        fs.makeDir(dir)
+    end
 end
 
---default files
+-- Download default files
 local url = "https://github.com/5yf1xed/CC-Tweaked_SSH/raw/refs/heads/main/default-files"
 local response = http.get(url)
 
@@ -20,7 +21,7 @@ if response then
     local body = response.readAll()
     response.close()
 
-    for line in body:gmatch("[^]+") do
+    for line in body:gmatch("[^\r\n]+") do
         local rawUrl, destination = line:match("([^:]+):(.+)")
         
         if rawUrl and destination then
@@ -31,6 +32,11 @@ if response then
                 local fileContent = fileResponse.readAll()
                 fileResponse.close()
                 
+                local dirPath = fs.getDir(destination)
+                if not fs.exists(dirPath) then
+                    fs.makeDir(dirPath)
+                end
+
                 local file = fs.open(destination, "w")
                 file.write(fileContent)
                 file.close()
