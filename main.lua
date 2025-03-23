@@ -4,11 +4,24 @@ local function downloadFile(URL, dest)
     return
   end
 
-  local success = shell.run("wget", URL, dest)
-  if not success then
-    print("Failed to download the file.")
-  else
-    print("Download successful!")
+  print("Starting download from: " .. URL)
+  local request = http.request(URL)
+
+  while true do
+    local event, url, response = os.pullEvent()
+    
+    if event == "http_success" and url == URL then
+      local file = fs.open(dest, "w")
+      file.write(response.readAll())
+      file.close()
+      response.close()
+      print("Download successful! Saved as: " .. dest)
+      break
+
+    elseif event == "http_failure" and url == URL then
+      print("Failed to download the file.")
+      break
+    end
   end
 end
 
