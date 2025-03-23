@@ -13,7 +13,7 @@ for _, dir in ipairs(default_dirs) do
 end
 
 --default files
-local url = ""
+local url = "https://github.com/5yf1xed/CC-Tweaked_SSH/raw/refs/heads/main/default-files"
 local response = http.get(url)
 
 if response then
